@@ -1,0 +1,666 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Samar Pratap Rai</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#060608;--bg2:#0d0d12;--white:#f0ede6;
+  --gold:#e8a020;--orange:#ff6b1a;--blue:#1a8cff;
+  --dim:#555;--border:#1a1a22;
+}
+body{background:var(--bg);color:var(--white);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:none}
+
+/* ── GRAIN ── */
+body::before{content:'';position:fixed;inset:0;z-index:998;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");opacity:.5}
+
+/* ── CURSOR ── */
+.cursor{width:14px;height:14px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;mix-blend-mode:difference}
+.cursor-follower{width:44px;height:44px;border:1px solid rgba(232,160,32,.4);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .2s,height .2s}
+
+/* ── VOLLEYBALL CANVAS ── */
+#vball-canvas{position:fixed;inset:0;z-index:1;pointer-events:none}
+
+/* ── SPEED LINES (hero only) ── */
+.speed-lines{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.speed-line{position:absolute;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(232,160,32,.15),transparent);transform-origin:left center;animation:speedLine 2s linear infinite}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;justify-content:space-between;align-items:center;padding:1.3rem 4rem;background:rgba(6,6,8,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.1em;color:var(--white);text-decoration:none}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{color:var(--dim);text-decoration:none;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;transition:color .3s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--gold);transition:width .3s}
+.nav-links a:hover{color:var(--white)}
+.nav-links a:hover::after{width:100%}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 4rem 5rem;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 50% 60% at 75% 40%,rgba(255,107,26,.1) 0%,transparent 65%),
+    radial-gradient(ellipse 40% 50% at 20% 70%,rgba(26,140,255,.07) 0%,transparent 60%)}
+.hero-grid{position:absolute;inset:0;z-index:0;opacity:.03;
+  background-image:linear-gradient(var(--white) 1px,transparent 1px),linear-gradient(90deg,var(--white) 1px,transparent 1px);
+  background-size:55px 55px}
+
+/* IMPACT TEXT ANIMATION */
+.hero-tag{font-family:'DM Mono',monospace;font-size:.75rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;animation:smashIn .6s .3s cubic-bezier(.2,1.6,.4,1) forwards;position:relative;z-index:2}
+.hero-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(5rem,13vw,12rem);line-height:.88;letter-spacing:.02em;position:relative;z-index:2}
+.hero-name .word{display:inline-block;overflow:hidden;line-height:1}
+.hero-name .word span{display:block;opacity:0;transform:translateY(110%);animation:slideUp .7s cubic-bezier(.16,1,.3,1) forwards}
+.hero-name .w1 span{animation-delay:.5s}
+.hero-name .w2 span{animation-delay:.65s;color:var(--gold)}
+.hero-name .w3 span{animation-delay:.8s}
+
+.hero-sub{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,3vw,2.2rem);color:var(--orange);letter-spacing:.15em;margin-top:.5rem;opacity:0;animation:smashIn .6s 1s cubic-bezier(.2,1.6,.4,1) forwards;position:relative;z-index:2}
+.hero-desc{max-width:480px;color:#777;font-size:.92rem;line-height:1.75;margin-top:1.8rem;opacity:0;animation:fadeUp .8s 1.2s forwards;position:relative;z-index:2}
+.hero-cta{display:flex;gap:1rem;margin-top:2.2rem;opacity:0;animation:fadeUp .8s 1.4s forwards;position:relative;z-index:2}
+
+.btn-primary{background:var(--gold);color:#000;padding:.85rem 2rem;font-size:.78rem;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:none;text-decoration:none;display:inline-block;transition:background .25s,transform .2s,box-shadow .25s;position:relative;overflow:hidden}
+.btn-primary::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.2);transform:translateX(-100%);transition:transform .3s}
+.btn-primary:hover::after{transform:translateX(0)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(232,160,32,.3)}
+.btn-outline{border:1px solid var(--border);color:var(--white);padding:.85rem 2rem;font-size:.78rem;font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:transparent;cursor:none;text-decoration:none;display:inline-block;transition:border-color .25s,transform .2s}
+.btn-outline:hover{border-color:var(--gold);transform:translateY(-3px)}
+
+.hero-scroll{position:absolute;right:4rem;bottom:5rem;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.5rem;opacity:0;animation:fadeUp 1s 1.8s forwards}
+.hero-scroll span{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.2em;color:var(--dim);writing-mode:vertical-rl}
+.scroll-line{width:1px;height:60px;background:var(--border);position:relative;overflow:hidden}
+.scroll-line::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:100%;background:var(--gold);animation:scrollDown 1.5s ease infinite}
+
+/* ── SECTIONS ── */
+.section{padding:8rem 4rem;position:relative;z-index:2}
+.section-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.28em;color:var(--gold);text-transform:uppercase;margin-bottom:.8rem}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,6vw,5.5rem);line-height:.95;letter-spacing:.03em;margin-bottom:3rem}
+.section-title .hit{display:inline-block;position:relative}
+.section-title .hit::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:3px;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform .5s .2s}
+.section-title.visible .hit::after{transform:scaleX(1)}
+
+/* ── ABOUT ── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.about-text p{color:#888;line-height:1.8;font-size:.97rem;margin-bottom:1.4rem}
+.about-text p strong{color:var(--white);font-weight:700}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--border)}
+.stat-box{background:var(--bg2);padding:2rem;transition:background .3s,transform .3s;position:relative;overflow:hidden}
+.stat-box::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform .4s}
+.stat-box:hover{background:#13131a;transform:scale(1.02)}
+.stat-box:hover::before{transform:scaleX(1)}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:3.8rem;color:var(--gold);line-height:1}
+.stat-label{font-size:.72rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:.3rem}
+
+/* ── EXPERIENCE ── */
+.exp-list{display:flex;flex-direction:column;gap:2px}
+.exp-item{background:var(--bg2);padding:2.5rem 3rem;display:grid;grid-template-columns:1fr auto;align-items:start;gap:2rem;transition:background .3s,transform .3s;position:relative;overflow:hidden}
+.exp-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--orange),var(--gold));transform:scaleY(0);transform-origin:bottom;transition:transform .4s}
+.exp-item:hover{background:#0e0e14;transform:translateX(8px)}
+.exp-item:hover::before{transform:scaleY(1)}
+.exp-role{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+.exp-company{color:var(--gold);font-size:.85rem;font-weight:600;margin-bottom:.8rem}
+.exp-points{list-style:none}
+.exp-points li{color:#777;font-size:.87rem;line-height:1.7;padding-left:1.2rem;position:relative;margin-bottom:.4rem}
+.exp-points li::before{content:'▶';position:absolute;left:0;color:var(--orange);font-size:.5rem;top:.35rem}
+.exp-date{font-family:'DM Mono',monospace;font-size:.73rem;color:var(--dim);letter-spacing:.1em;white-space:nowrap;padding-top:.2rem}
+
+/* ── SKILLS ── */
+.skills-section{background:var(--bg2)}
+.skills-container{display:grid;grid-template-columns:repeat(3,1fr);gap:3rem}
+.skill-group-title{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-family:'DM Mono',monospace;margin-bottom:1.5rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+.skill-tag{display:inline-block;padding:.38rem .85rem;border:1px solid var(--border);font-size:.78rem;color:#777;margin:.22rem;transition:all .2s;position:relative;overflow:hidden}
+.skill-tag::before{content:'';position:absolute;inset:0;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform .25s;z-index:-1}
+.skill-tag:hover{border-color:var(--orange);color:#000;transform:translateY(-2px)}
+.skill-tag:hover::before{transform:scaleX(1)}
+
+/* ── PROJECTS ── */
+.projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.project-card{background:var(--bg2);padding:2.5rem;transition:background .3s;position:relative;overflow:hidden}
+.project-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--orange),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .4s}
+.project-card:hover{background:#0e0e14}
+.project-card:hover::before{transform:scaleX(1)}
+.project-num{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--border);line-height:1;margin-bottom:1rem;transition:color .3s}
+.project-card:hover .project-num{color:rgba(255,107,26,.25)}
+.project-title{font-size:1rem;font-weight:700;margin-bottom:.8rem;line-height:1.3}
+.project-desc{color:#666;font-size:.83rem;line-height:1.7}
+.project-date{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--orange);letter-spacing:.1em;margin-top:1.2rem}
+
+/* ── ACHIEVEMENTS ── */
+.achieve-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.achieve-col{background:var(--bg2);padding:3rem}
+.achieve-col-title{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-family:'DM Mono',monospace;margin-bottom:1.5rem}
+.achieve-item{display:flex;align-items:center;gap:.8rem;padding:.75rem 0;border-bottom:1px solid var(--border);font-size:.86rem;color:#777;transition:color .2s,padding-left .2s}
+.achieve-item:hover{color:var(--white);padding-left:.5rem}
+.achieve-item::before{content:'🏆';font-size:.8rem;flex-shrink:0}
+.achieve-item.sports::before{content:'🏐'}
+
+/* ── CERTS ── */
+.cert-list{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.cert-card{background:var(--bg2);padding:2rem;transition:background .3s;border-bottom:2px solid transparent;transition:background .3s,border-color .3s}
+.cert-card:hover{background:#0e0e14;border-color:var(--gold)}
+.cert-name{font-size:.95rem;font-weight:700;margin-bottom:.4rem}
+.cert-provider{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.8rem}
+.cert-desc{color:#666;font-size:.8rem;line-height:1.6}
+.cert-date{font-size:.68rem;color:var(--dim);font-family:'DM Mono',monospace;margin-top:1rem}
+
+/* ── CONTACT ── */
+.contact-section{background:var(--bg2);text-align:center;padding:8rem 4rem;position:relative;z-index:2;overflow:hidden}
+.contact-section::before{content:'SPIKE';font-family:'Bebas Neue',sans-serif;font-size:20vw;color:rgba(255,107,26,.03);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);letter-spacing:.1em;pointer-events:none;white-space:nowrap}
+.contact-big{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,10vw,9rem);line-height:.9;letter-spacing:.02em;margin-bottom:3rem}
+.contact-big span{color:var(--gold)}
+.contact-links{display:flex;justify-content:center;gap:3rem;flex-wrap:wrap;margin-top:2rem}
+.contact-link{display:flex;flex-direction:column;align-items:center;gap:.4rem;text-decoration:none;color:var(--dim);transition:color .3s,transform .3s}
+.contact-link:hover{color:var(--white);transform:translateY(-4px)}
+.contact-link .label{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.contact-link .value{font-size:.9rem;font-weight:500}
+
+footer{padding:2rem 4rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);position:relative;z-index:2}
+footer p{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--dim);letter-spacing:.1em}
+.divider{height:1px;background:var(--border);margin:0 4rem;position:relative;z-index:2}
+
+/* ── IMPACT FLASH ── */
+.impact-flash{position:fixed;inset:0;background:white;z-index:9990;pointer-events:none;opacity:0}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(35px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:none}
+.reveal-left{opacity:0;transform:translateX(-40px);transition:opacity .7s ease,transform .7s ease}
+.reveal-left.visible{opacity:1;transform:none}
+.reveal-right{opacity:0;transform:translateX(40px);transition:opacity .7s ease,transform .7s ease}
+.reveal-right.visible{opacity:1;transform:none}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeUp{to{opacity:1;transform:none}}
+@keyframes smashIn{0%{opacity:0;transform:scale(1.4) translateY(-10px)}60%{transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes slideUp{to{opacity:1;transform:none}}
+@keyframes scrollDown{0%{top:-100%}100%{top:100%}}
+@keyframes speedLine{0%{opacity:0;width:0;left:100%}50%{opacity:1}100%{opacity:0;width:40%;left:-10%}}
+@keyframes ballBounce{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-18px) rotate(90deg)}50%{transform:translateY(0) rotate(180deg)}75%{transform:translateY(-8px) rotate(270deg)}}
+@keyframes floatBall{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes impactRing{0%{transform:scale(0);opacity:1}100%{transform:scale(3);opacity:0}}
+@keyframes trailFade{0%{opacity:.6}100%{opacity:0;transform:scale(0.3)}}
+
+/* MOBILE */
+@media(max-width:768px){
+  nav{padding:1.2rem 1.5rem}
+  .nav-links{display:none}
+  .hero{padding:0 1.5rem 4rem}
+  .hero-scroll{display:none}
+  .section{padding:5rem 1.5rem}
+  .about-grid,.skills-container,.projects-grid,.achieve-grid,.cert-list{grid-template-columns:1fr}
+  .about-grid{gap:3rem}
+  footer{flex-direction:column;gap:1rem;text-align:center}
+  .divider{margin:0 1.5rem}
+  .exp-item{grid-template-columns:1fr;padding:2rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="vball-canvas"></canvas>
+<div class="impact-flash" id="impact-flash"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursor-follower"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">SPR<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="speed-lines" id="speed-lines"></div>
+  <p class="hero-tag">— Fashion Technology × Digital Innovation</p>
+  <h1 class="hero-name">
+    <span class="word w1"><span>SAMAR</span></span><br>
+    <span class="word w2"><span>PRATAP</span></span><br>
+    <span class="word w3"><span>RAI</span></span>
+  </h1>
+  <p class="hero-sub">ACE YOUR FUTURE.</p>
+  <p class="hero-desc">Bachelor of Fashion Technology student at NIFT Bengaluru — bridging garment construction, AI, IoT, and data-driven manufacturing.</p>
+  <div class="hero-cta">
+    <a href="#experience" class="btn-primary">View Experience</a>
+    <a href="#contact" class="btn-outline">Get in Touch</a>
+  </div>
+  <div class="hero-scroll"><div class="scroll-line"></div><span>Scroll</span></div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about">
+  <p class="section-label reveal">01 — About</p>
+  <h2 class="section-title reveal">What I<br><span class="hit">Bring</span></h2>
+  <div class="about-grid">
+    <div class="about-text reveal-left">
+      <p>I'm a <strong>Fashion Technology student</strong> with a rare intersection of skills — combining traditional garment construction with modern industrial engineering, data analysis, and software development.</p>
+      <p>My experience spans from <strong>machine embroidery production</strong> and textile manufacturing to building <strong>AI-based defect detection systems</strong> and IoT devices. I believe the future of fashion is deeply technical.</p>
+      <p>Currently pursuing my degree at the <strong>National Institute of Fashion Technology, Bengaluru</strong> (2023–2027).</p>
+    </div>
+    <div class="stats-grid reveal-right">
+      <div class="stat-box"><div class="stat-num">3+</div><div class="stat-label">Internships</div></div>
+      <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">Projects Built</div></div>
+      <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">Certifications</div></div>
+      <div class="stat-box"><div class="stat-num">10+</div><div class="stat-label">Awards Won</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EXPERIENCE -->
+<section class="section" id="experience">
+  <p class="section-label reveal">02 — Experience</p>
+  <h2 class="section-title reveal">Work<br><span class="hit">History</span></h2>
+  <div class="exp-list">
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-role">Machine Embroidery Intern</div>
+        <div class="exp-company">Kaljeet Enterprises, Indore</div>
+        <ul class="exp-points">
+          <li>Observed end-to-end machine embroidery production — from design digitalization to final garment application</li>
+          <li>Gained understanding of workflow coordination, production planning, machine settings, quality control and defect identification</li>
+        </ul>
+      </div>
+      <div class="exp-date">Dec '25</div>
+    </div>
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-role">Textile Intern</div>
+        <div class="exp-company">Pratibha Syntex Ltd., Indore</div>
+        <ul class="exp-points">
+          <li>Explored core textile processes — from spun yarn and grey fabric production to sustainable dyeing</li>
+          <li>Experienced how technology, sustainability and innovation are transforming textile manufacturing</li>
+        </ul>
+      </div>
+      <div class="exp-date">Jun '25 – Jul '25</div>
+    </div>
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-role">Project Intern</div>
+        <div class="exp-company">Pratibha Syntex Ltd., Indore</div>
+        <ul class="exp-points">
+          <li>Conducted market research analyzing consumer behavior, competitor positioning and market trends</li>
+          <li>Identified sales trends and demand patterns through data analysis and basic regression</li>
+          <li>Created KPI reports and dashboards to support pricing and business decisions</li>
+        </ul>
+      </div>
+      <div class="exp-date">Jun '24 – Jul '24</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SKILLS -->
+<section class="section skills-section" id="skills">
+  <p class="section-label reveal">03 — Skills</p>
+  <h2 class="section-title reveal">Tools &amp;<br><span class="hit">Knowledge</span></h2>
+  <div class="skills-container">
+    <div class="reveal">
+      <div class="skill-group-title">Design & Office Tools</div>
+      <span class="skill-tag">Adobe Illustrator</span><span class="skill-tag">Adobe InDesign</span><span class="skill-tag">Adobe Photoshop</span><span class="skill-tag">Adobe Premiere Pro</span><span class="skill-tag">AutoCAD</span><span class="skill-tag">Figma</span><span class="skill-tag">Blender</span><span class="skill-tag">Da Vinci Resolve</span><span class="skill-tag">Microsoft Office</span><span class="skill-tag">Power BI</span><span class="skill-tag">TukaCAD</span>
+    </div>
+    <div class="reveal">
+      <div class="skill-group-title">Programming & Dev</div>
+      <span class="skill-tag">Python</span><span class="skill-tag">R Programming</span><span class="skill-tag">HTML / CSS / PHP</span><span class="skill-tag">JavaScript</span><span class="skill-tag">MySQL</span><span class="skill-tag">React</span>
+    </div>
+    <div class="reveal">
+      <div class="skill-group-title">Domain Knowledge</div>
+      <span class="skill-tag">Pattern Making</span><span class="skill-tag">Garment Construction</span><span class="skill-tag">Lean Management</span><span class="skill-tag">Sustainable Production</span><span class="skill-tag">Production Planning</span><span class="skill-tag">Internet of Things</span><span class="skill-tag">Artificial Intelligence</span><span class="skill-tag">Sourcing & Costing</span><span class="skill-tag">Research Methodology</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROJECTS -->
+<section class="section" id="projects">
+  <p class="section-label reveal">04 — Projects</p>
+  <h2 class="section-title reveal">Selected<br><span class="hit">Work</span></h2>
+  <div class="projects-grid">
+    <div class="project-card reveal">
+      <div class="project-num">01</div>
+      <div class="project-title">AI-Based Fabric Defect Detection System</div>
+      <div class="project-desc">Built a computer vision model to detect fabric surface defects using image datasets — applying AI to quality control in textile manufacturing.</div>
+      <div class="project-date">May '25</div>
+    </div>
+    <div class="project-card reveal">
+      <div class="project-num">02</div>
+      <div class="project-title">IoT Industrial Sewing Machine Health Tracker</div>
+      <div class="project-desc">Built a real-time machine monitoring system using Arduino/ESP32 and multiple sensors to track industrial sewing machine health.</div>
+      <div class="project-date">Dec '25</div>
+    </div>
+    <div class="project-card reveal">
+      <div class="project-num">03</div>
+      <div class="project-title">Full-Stack Portfolio Website</div>
+      <div class="project-desc">Designed and developed a full-stack responsive portfolio website showcasing projects in AI, IoT, and Apparel Technology.</div>
+      <div class="project-date">Dec '25</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CERTS -->
+<section class="section">
+  <p class="section-label reveal">05 — Certifications</p>
+  <h2 class="section-title reveal">Learning<br><span class="hit">&amp; Growth</span></h2>
+  <div class="cert-list">
+    <div class="cert-card reveal"><div class="cert-name">Power BI for Beginners</div><div class="cert-provider">Simplilearn — SkillUP</div><div class="cert-desc">Power Query, data modeling, DAX, interactive dashboards, KPI visualizations, and publishing to Power BI Service.</div><div class="cert-date">Jan '26</div></div>
+    <div class="cert-card reveal"><div class="cert-name">Understanding Data Analytics</div><div class="cert-provider">Simplilearn — SkillUP</div><div class="cert-desc">Data types, cleaning & preprocessing, EDA, basic statistics, regression analysis, and data visualization.</div><div class="cert-date">Dec '25</div></div>
+    <div class="cert-card reveal"><div class="cert-name">Advanced Excel</div><div class="cert-provider">Simplilearn Microsoft — SkillUP</div><div class="cert-desc">Logical & lookup functions, financial calculations, conditional formatting, pivot tables, and chart visualization.</div><div class="cert-date">Dec '25</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ACHIEVEMENTS -->
+<section class="section" id="achievements">
+  <p class="section-label reveal">06 — Achievements</p>
+  <h2 class="section-title reveal">Awards &amp;<br><span class="hit">Leadership</span></h2>
+  <div class="achieve-grid">
+    <div class="achieve-col reveal-left">
+      <div class="achieve-col-title">Competition Wins</div>
+      <div class="achieve-item">Winner, Poetry Competition — Dainik Jagran</div>
+      <div class="achieve-item">Winner, Stand-Up Comedy — Spectrum 2024</div>
+      <div class="achieve-item">Winner, Nukkad Natak — Spectrum 2024</div>
+      <div class="achieve-item">Winner, Nukkad Natak — IIIT Bangalore</div>
+      <div class="achieve-item">Winner, Nukkad Natak — Christ University</div>
+      <div class="achieve-item">Winner, Nukkad Natak — Converge 2026, Kannur</div>
+      <div class="achieve-item">Silver Medalist, Nukkad Natak — Converge 2025</div>
+      <div class="achieve-item">Winner, Quiz Competition — Spectrum 2026</div>
+    </div>
+    <div class="achieve-col reveal-right">
+      <div class="achieve-col-title">Sports & Leadership</div>
+      <div class="achieve-item sports">Silver Medalist, Volleyball Competition</div>
+      <div class="achieve-item sports">Bronze Medalist, Pickleball — Converge 2025</div>
+      <div class="achieve-item sports">Winner, Kabaddi — Sports Week 2024</div>
+      <div class="achieve-item sports">Gold Medalist, Table Tennis — Sports Week 2025</div>
+      <div class="achieve-item sports">Silver Medalist, Pickleball — Sports Week 2025</div>
+      <div class="achieve-item">Registration Head, Annual Fest Spectrum 2025</div>
+      <div class="achieve-item">Infrastructure Head, Spectrum 2026</div>
+      <div class="achieve-item">Secretary, Sports Club</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+  <p class="section-label" style="display:inline-block;margin-bottom:1rem;">07 — Contact</p>
+  <div class="contact-big reveal">Let's<br><span>Connect</span></div>
+  <div class="contact-links reveal">
+    <a class="contact-link" href="mailto:samarrai691@gmail.com"><span class="label">Email</span><span class="value">samarrai691@gmail.com</span></a>
+    <a class="contact-link" href="mailto:samar.prataprai@nift.ac.in"><span class="label">NIFT Email</span><span class="value">samar.prataprai@nift.ac.in</span></a>
+    <a class="contact-link" href="tel:+916391923280"><span class="label">Phone</span><span class="value">+91 6391923280</span></a>
+    <a class="contact-link" href="#"><span class="label">Location</span><span class="value">HSR Layout, Bengaluru</span></a>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Samar Pratap Rai</p>
+  <p>NIFT Bengaluru — Fashion Technology '27</p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   VOLLEYBALL CANVAS ENGINE
+══════════════════════════════════════════ */
+const canvas = document.getElementById('vball-canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── BALL CLASS ──
+class Ball {
+  constructor(x, y, vx, vy, r=18, main=false){
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+    this.r=r; this.main=main;
+    this.trail=[];
+    this.rotation=0;
+    this.gravity=0.28;
+    this.bounce=0.62;
+    this.friction=0.995;
+    this.alive=true;
+    this.opacity=1;
+    this.age=0;
+    this.maxAge=main?Infinity:340;
+  }
+  update(){
+    this.age++;
+    if(!this.main && this.age>this.maxAge){ this.alive=false; return; }
+    if(!this.main && this.age>this.maxAge*0.7) this.opacity=1-(this.age-this.maxAge*0.7)/(this.maxAge*0.3);
+    this.trail.push({x:this.x, y:this.y, op:this.opacity});
+    if(this.trail.length>16) this.trail.shift();
+    this.vy+=this.gravity;
+    this.vx*=this.friction;
+    this.x+=this.vx; this.y+=this.vy;
+    this.rotation+=this.vx*0.04;
+    // floor bounce
+    if(this.y+this.r>H){
+      this.y=H-this.r;
+      this.vy*=-this.bounce;
+      this.vx*=0.88;
+      if(Math.abs(this.vy)<1.5) this.vy=0;
+      spawnImpact(this.x, H, this.main);
+    }
+    // wall bounce
+    if(this.x-this.r<0){ this.x=this.r; this.vx=Math.abs(this.vx)*0.8; }
+    if(this.x+this.r>W){ this.x=W-this.r; this.vx=-Math.abs(this.vx)*0.8; }
+    // ceiling
+    if(this.y-this.r<0){ this.y=this.r; this.vy=Math.abs(this.vy)*0.7; }
+  }
+  draw(){
+    // trail
+    this.trail.forEach((t,i)=>{
+      const p=(i+1)/this.trail.length;
+      ctx.save();
+      ctx.globalAlpha=p*0.25*this.opacity;
+      ctx.beginPath();
+      ctx.arc(t.x,t.y,this.r*p*0.7,0,Math.PI*2);
+      ctx.fillStyle=`hsl(${28+i*3},100%,55%)`;
+      ctx.fill();
+      ctx.restore();
+    });
+    // glow
+    ctx.save();
+    ctx.globalAlpha=0.18*this.opacity;
+    const grd=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r*2.5);
+    grd.addColorStop(0,'rgba(255,140,30,0.8)');
+    grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r*2.5,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    // ball body
+    ctx.save();
+    ctx.globalAlpha=this.opacity;
+    ctx.translate(this.x,this.y);
+    ctx.rotate(this.rotation);
+    // base
+    const bg=ctx.createRadialGradient(-this.r*.3,-this.r*.3,this.r*.1,0,0,this.r);
+    bg.addColorStop(0,'#fffbe8');
+    bg.addColorStop(0.4,'#f5c842');
+    bg.addColorStop(1,'#c87010');
+    ctx.beginPath();
+    ctx.arc(0,0,this.r,0,Math.PI*2);
+    ctx.fillStyle=bg;
+    ctx.fill();
+    // panel lines
+    ctx.strokeStyle='rgba(80,40,0,0.35)';
+    ctx.lineWidth=1.2;
+    [[0,1],[1,0],[0.7,0.7],[-0.7,0.7]].forEach(([a,b])=>{
+      ctx.beginPath();
+      ctx.moveTo(-this.r*b,-this.r*a);
+      ctx.quadraticCurveTo(this.r*.4,0,this.r*b,this.r*a);
+      ctx.stroke();
+    });
+    // shine
+    ctx.beginPath();
+    ctx.arc(-this.r*.28,-this.r*.3,this.r*.25,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.45)';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── IMPACT RINGS ──
+class Impact {
+  constructor(x,y,big=false){ this.x=x; this.y=y; this.r=0; this.maxR=big?120:60; this.op=1; this.big=big; }
+  update(){ this.r+=big?5:3.5; this.op=1-this.r/this.maxR; }
+  get alive(){ return this.r<this.maxR; }
+  draw(){
+    ctx.save();
+    ctx.globalAlpha=this.op*0.6;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.strokeStyle=this.big?'rgba(255,107,26,0.9)':'rgba(232,160,32,0.8)';
+    ctx.lineWidth=this.big?3:1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+let balls=[], impacts=[];
+let mainBall = new Ball(W*0.8, H*0.15, -3.5, -2, 22, true);
+balls.push(mainBall);
+
+function spawnImpact(x,y,big){
+  impacts.push(new Impact(x,y,big));
+  impacts.push(new Impact(x,y,false));
+}
+
+function spawnDecoBall(){
+  const x = Math.random()*W;
+  const vx = (Math.random()-0.5)*8;
+  const vy = -Math.random()*10-5;
+  balls.push(new Ball(x,-20,vx,vy,10+Math.random()*8));
+}
+
+// spawn deco balls periodically
+setInterval(()=>{ if(balls.length<18) spawnDecoBall(); }, 1800);
+
+// ── NET ──
+function drawNet(){
+  const ny = H*0.82;
+  ctx.save();
+  ctx.globalAlpha=0.04;
+  ctx.strokeStyle='#e8a020';
+  ctx.lineWidth=1;
+  // top bar
+  ctx.beginPath(); ctx.moveTo(0,ny); ctx.lineTo(W,ny); ctx.stroke();
+  // verticals
+  for(let x=0;x<W;x+=30){
+    ctx.beginPath(); ctx.moveTo(x,ny); ctx.lineTo(x,ny+60); ctx.stroke();
+  }
+  // horizontals
+  for(let y=ny;y<ny+60;y+=15){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── SPEED LINES ──
+const speedLineContainer = document.getElementById('speed-lines');
+for(let i=0;i<12;i++){
+  const line=document.createElement('div');
+  line.className='speed-line';
+  line.style.cssText=`
+    top:${20+Math.random()*80}%;
+    left:${Math.random()*100}%;
+    width:${100+Math.random()*200}px;
+    animation-delay:${Math.random()*2}s;
+    animation-duration:${1.5+Math.random()*1.5}s;
+    transform:rotate(${-5+Math.random()*10}deg);
+    opacity:${0.3+Math.random()*0.4};
+  `;
+  speedLineContainer.appendChild(line);
+}
+
+// ── MAIN LOOP ──
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  drawNet();
+  impacts=impacts.filter(i=>i.alive);
+  impacts.forEach(i=>{ i.update(); i.draw(); });
+  balls=balls.filter(b=>b.alive||b.main);
+  balls.forEach(b=>{ b.update(); b.draw(); });
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ══════════════════════════════════════════
+   CURSOR
+══════════════════════════════════════════ */
+const cursor=document.getElementById('cursor');
+const follower=document.getElementById('cursor-follower');
+let mx=0,my=0,fx=0,fy=0;
+document.addEventListener('mousemove',e=>{ mx=e.clientX; my=e.clientY; });
+function animateCursor(){
+  cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  fx+=(mx-fx)*0.11; fy+=(my-fy)*0.11;
+  follower.style.left=fx+'px'; follower.style.top=fy+'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a,button,.exp-item,.project-card,.skill-tag,.cert-card,.stat-box').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ cursor.style.width='20px'; cursor.style.height='20px'; follower.style.width='64px'; follower.style.height='64px'; });
+  el.addEventListener('mouseleave',()=>{ cursor.style.width='14px'; cursor.style.height='14px'; follower.style.width='44px'; follower.style.height='44px'; });
+});
+
+// click spawns burst
+document.addEventListener('click',e=>{
+  for(let i=0;i<5;i++){
+    const angle=Math.random()*Math.PI*2;
+    const spd=4+Math.random()*6;
+    balls.push(new Ball(e.clientX,e.clientY,Math.cos(angle)*spd,Math.sin(angle)*spd-4,8+Math.random()*6));
+  }
+  spawnImpact(e.clientX,e.clientY,true);
+  // flash
+  const flash=document.getElementById('impact-flash');
+  flash.style.transition='none'; flash.style.opacity='0.08';
+  setTimeout(()=>{ flash.style.transition='opacity 0.4s'; flash.style.opacity='0'; },20);
+});
+
+/* ══════════════════════════════════════════
+   SCROLL REVEAL
+══════════════════════════════════════════ */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      // also trigger section-title underline
+      const st=entry.target.querySelector('.section-title');
+      if(st) st.classList.add('visible');
+      obs.unobserve(entry.target);
+    }
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>obs.observe(el));
+
+// section titles separately
+const stObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); stObs.unobserve(e.target); } });
+},{threshold:0.2});
+document.querySelectorAll('.section-title').forEach(el=>stObs.observe(el));
+</script>
+</body>
+</html>
